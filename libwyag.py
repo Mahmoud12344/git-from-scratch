@@ -1,3 +1,5 @@
+import cli
+
 ## this is the module used for parsing the input and makes the help/use menuses
 import argparse
 
@@ -29,19 +31,11 @@ argsubparsers.required = True
 3- main function has the grgv from command line arguments we take every thing expt the fitst argument 
 4 we parse the input 
 5 -match the cmd function 
-
-
-
-
-
-
-
-
 """
 
 
 def main(argv=sys.argv[1:]):
-    args = argparser.parse_args(argv)
+    args = cli.parse_args(argv)
 
     match args.command:
         # case 'add': cmd_add(args)
@@ -179,16 +173,6 @@ def repo_default_config():
     return ret
 
 
-argesp = argsubparsers.add_parser("init", help="init")
-argesp.add_argument(
-    "path",
-    metavar="directory",
-    nargs="?",
-    default=".",
-    help="Where to create the repository.",
-)
-
-
 def cmd_init(args):
     """
     The Repo init logic
@@ -288,3 +272,33 @@ def object_read(repo, sha):
                 raise Exception(f"Unknown type {fmt.decode('ascii')} for object {sha}")
 
     return c(raw[y + 1 :])
+
+
+def object_write(obj, repo=None):
+    """this is a util function used to write the git objects to there correct place,
+    1- use the repecteve searialization method in the obj
+    2-make the raw header,
+    3-hash it ,
+    4-compute the path and wite the file"""
+
+    data = obj.serialize()
+    result = obj.fmt + b" " + str(len(data)).encode() + b"\x00" + data
+    sha = hashlib.sha1(result).hexdigest()
+    if repo:
+        path = repo_file(repo, "objects", sha[0:2], sha[2:], mkdir=True)
+
+        if not os.path.exists(path):
+            with open(path, "wb") as f:
+                f.write(zlib.compress(result))
+
+    return sha
+
+
+class GitBlob(GitObject):
+    fmt = b"blob"
+
+    def serialize(self):
+        return self.blobdata
+
+    def deserialize(self, data):
+        self.blobdata = data
