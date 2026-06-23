@@ -1,14 +1,6 @@
 import argparse
 from libwyag import *
-
-def cmd_init(args):
-    """
-    The Repo init logic
-    1-receive the command as a path.command in the main matcher
-    2 this function "cmd-init(args)" gets called and calles repo_creat(args.path)
-
-    """
-    repo_create(args.path)
+from gitObjects import *
 
 
 def parse_args(argv):
@@ -29,13 +21,13 @@ def parse_args(argv):
     )
 
     # cat-file parser
-    cat_file_parser = argparser.add_subparsers(
+    cat_file_parser = argsubparsers.add_parser(
         "cat-file", help="Provide content of repository objects"
     )
 
     cat_file_parser.add_argument(
         "type",
-        meravar="type",
+        metavar="type",
         choices=["blob", "commit", "tag", "tree"],
         help="Specify the type",
     )
@@ -44,3 +36,16 @@ def parse_args(argv):
     )
 
     return argparser.parse_args(argv)
+
+
+## commands calling
+
+
+def cmd_init(args):
+    """
+    The Repo init logic
+    1-receive the command as a path.command in the main matcher
+    2 this function "cmd-init(args)" gets called and calles repo_creat(args.path)
+
+    """
+    repo_create(args.path)
