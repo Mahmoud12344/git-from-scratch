@@ -135,12 +135,7 @@ def repo_create(path):
     2.3-if all of this does not satisfy , we creat the work tree
     3 - creates the skeleton of the .mygit
     4- make the head
-    5- make the default config file
-
-
-
-
-    """
+    5- make the default config file"""
 
     repo = GitRepository(path, True)
 
@@ -226,3 +221,70 @@ def repo_find(path=".", required=True):
             return None
 
     return repo_find(pr, required)
+
+
+class GitObject(object):
+
+    def __init__(self, data=None):
+
+        if data != None:
+            self.deserialize(data)
+        else:
+            self.init()
+
+    def serialize(self, repo):
+        """must be implemented by a subclass to make a bitString imp for the data"""
+        raise Exception("UnImplemented")
+
+    def deserialize(self, data):
+
+        raise Exception("UnImplemented")
+
+    def init(self):
+        pass
+
+
+def object_read(repo, sha):
+    """this reads a git sha-1 hash and return the exact object
+    1-read the path by repo_file
+    1.1-check the file type
+
+    2- open the file as a binary type
+    3-decompress the obj to the a redable format type space size null content
+    4 read the obj type
+    5-read and validate the obj size
+    6-pick the constructor
+    7- return"""
+
+    path = repo_file(repo, "object", sha[:2], sha[2:])
+
+    if not os.path.isfile(path):
+        return None
+
+    with open(path, "fb") as f:
+        raw = zlib.decompress(f.read())
+        ## the obj type plop commit ,,,
+        x = raw.find(b" ")
+        fmt = raw[0:x]
+
+        ## reading the size
+
+        y = raw.find(b"\x00", x)
+        size = int(raw[x:y].decode("ascii"))
+
+        if size != len(raw) - y - 1:
+            raise Exception(f"Mall formed obj {sha}:bad length")
+
+        match fmt:
+            case b"commit":
+                c = GitCommit
+            case b"blob":
+                c = GitBlob
+            case b"tree":
+                c = GitTree
+            case b"tag":
+                c = GitTag
+            case _:
+                raise Exception(f"Unknown type {fmt.decode('ascii')} for object {sha}")
+
+    return c(raw[y + 1 :])
