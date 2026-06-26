@@ -1,9 +1,10 @@
 # from  import *
 # from cli import *
 from repository import *
-from gitBlob import GitBlob
-from gitCommit import GitCommit
 
+# from gitBlob import GitBlob
+# import gitBlob
+# from gitCommit import GitCommit
 
 # this is used to read and write config files
 from datetime import datetime
@@ -73,11 +74,18 @@ def object_read(repo, sha):
             raise Exception(f"Mall formed obj {sha}:bad length")
 
         match fmt:
+
             case b"commit":
+                from gitCommit import GitCommit
+
                 c = GitCommit
             case b"blob":
+                from gitBlob import GitBlob
+
                 c = GitBlob
             case b"tree":
+                from gitTree import GitTree
+
                 c = GitTree
             case b"tag":
                 c = GitTag
@@ -130,10 +138,16 @@ def object_hash(fd, fmt, repo=None):
     data = fd.read()
     match fmt:
         case b"commit":
+            from gitCommit import GitCommit
+
             obj = GitCommit(data)
         case b"tree":
+            from gitTree import GitTree
+
             obj = GitTree(data)
         case b"blob":
+            from gitBlob import GitBlob
+
             obj = GitBlob(data)
         case b"tag":
             obj = gitTag(data)
