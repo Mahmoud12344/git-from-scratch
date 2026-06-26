@@ -35,6 +35,26 @@ def parse_args(argv):
         "object", metavar="object", help="The object to Display"
     )
 
+    # hash-object parser
+    hash_object_parser = argsubparsers.add_parser(
+        "hash-object", help="Computes IDs and optionally creates a blob from a file"
+    )
+
+    hash_object_parser.add_argument(
+        "-t",
+        metavar="type",
+        dest="type",
+        choices=["blob", "commit", "tag", "tree"],
+        help="Specify the type",
+    )
+    hash_object_parser.add_argument(
+        "-w",
+        dest="write",
+        action="store_true",
+        help="Wire the object into the repo database",
+    )
+    hash_object_parser.add_argument("path", help="Read object from a file")
+
     return argparser.parse_args(argv)
 
 
@@ -49,3 +69,8 @@ def cmd_init(args):
 
     """
     repo_create(args.path)
+
+
+def cmd_cat_file(args):
+    repo = repo_find()
+    cat_file(repo, args.obj, fmt=args.type.encode())

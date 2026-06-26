@@ -118,3 +118,54 @@ class GitBlob(GitObject):
 
     def deserialize(self, data):
         self.blobdata = data
+
+
+## TODO this function to be fully implemented later
+def object_find(repo, name, fmt=None, follow=True):
+    return name
+
+
+def cat_file(repo, obj, fmt=None):
+    obj = object_read(
+        repo,
+        object_find(repo, obj, fmt=fmt),
+    )
+    sys.stdout.buffer.write(obj.serialize())
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
