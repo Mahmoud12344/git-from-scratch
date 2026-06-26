@@ -45,3 +45,9 @@ Q52UWybBzpaP9HEd4XnR+HuQ4k2K0ns2KgNImsNvIyFwbpMUyUWLMPimaV1DWUXo
 -----END PGP SIGNATURE-----
 
 Create first draft
+
+## what is the job of a tree:/?
+
+> it associates blobs to a path ,and it's a Tree of a three-element tuples made of a file mode ,path, and sha-1
+> `Mode sha-1 path`
+> 
