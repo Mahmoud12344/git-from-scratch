@@ -54,6 +54,16 @@ def parse_args(argv):
         help="Wire the object into the repo database",
     )
     hash_object_parser.add_argument("path", help="Read object from a file")
+    # log-parser
+    log_parser = argsubparsers.add_parser(
+        "log", help="show the history of the commits "
+    )
+    log_parser.add_argument(
+        "commit",
+        default="HEAD",
+        nargs="?",
+        help="Commit to start ",
+    )
 
     return argparser.parse_args(argv)
 
@@ -89,3 +99,12 @@ def cmd_hash_object(args):
     with open(args.path, "rb") as fd:
         sha = object_hash(fd, args.type.encode(), repo)
         print(sha)
+
+
+def cmd_log(args):
+    repo = repo_find()
+
+    print("digraph wyaglog{")
+    print("  node[shape=rect]")
+    log_graphviz(repo, object_find(repo, args.commit), set())
+    print("}")
