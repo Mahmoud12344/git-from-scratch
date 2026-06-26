@@ -1,6 +1,7 @@
 import argparse
 from libwyag import *
 from gitObjects import *
+from gitTree import *
 
 
 def parse_args(argv):
@@ -65,6 +66,20 @@ def parse_args(argv):
         help="Commit to start ",
     )
 
+    ## ls-tree
+    ls_tree_parser = argsubparsers.add_parser("ls-tree", help="Display the Tree Object")
+    ls_tree_parser.add_argument(
+        "-r",
+        dest="recursive",
+        action="store_true",
+        help="Recurse into subTrees",
+    )
+
+    ls_tree_parser.add_argument(
+        "tree",
+        help="A tree-ish Object. ",
+    )
+
     return argparser.parse_args(argv)
 
 
@@ -108,6 +123,11 @@ def cmd_log(args):
     print("  node[shape=rect]")
     log_graphviz(repo, object_find(repo, args.commit), set())
     print("}")
+
+
+def cmd_ls_tree(args):
+    repo = repo_find()
+    ls_tree(repo, args.tree, args.recursive)
 
 
 # TODO understand in details how this function works and , know what is 'graphviz 'lib

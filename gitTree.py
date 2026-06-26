@@ -1,4 +1,4 @@
-from gitObjects import GitObject
+from gitObjects import *
 
 # Tree format :
 # [mode] space [path] 0x00 [sha-1]
@@ -85,6 +85,47 @@ def tree_serialize(obj: GitTree):
         ret += sha.to_bytes(20, byteorder="big")
 
         return ret
+
+
+def ls_tree(repo, ref, recursive=None, prefix=""):
+    """Execution steps:
+    1-find the full name of the ref,
+    2-read the object ,
+    3-loop for the items in the tree,
+    check for the length of the mode to and check if it's 5 or i's not
+    to know the type of the current object in the tree,
+    4- match the type
+    5- branch if it's a leaf print and terminate ,
+    else make a recursive call
+    """
+    # 1
+    sha = object_find(repo, ref, fmt=b"tree")
+    # 2
+    obj = object_read(repo, sha)
+    # 3
+    for item in obj.items:
+        if len(item.mode) == 5:
+            _type = item.mode[0:1]
+        else:
+            _type = item.mode[0:2]
+        match _type:
+            case b"04":
+                _type = "tree"
+            case b"10":
+                _type = "blob"  # < regular file
+            case b"12":
+                _type = "blob"  # <symlink,
+            case b"16":
+                _type = "commit"
+            case _:
+                raise Exception(f"Weird tree leaf mode {item.mode}")
+
+        if not (recursive and type == "tree"):  # This is a leaf
+            print(
+                f"{'0' * (6 - len(item.mode)) + item.mode.decode('ascii')} {type} {item.sha}\t{os.path.join(prefix, item.path)}"
+            )
+        else:  # This is a branch, recurse
+            ls_tree(repo, item.sha, recursive, os.path.join(prefix, item.path))
 
 
 class GitTree(GitObject):

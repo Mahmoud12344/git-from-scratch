@@ -1,4 +1,4 @@
-from gitObjects import GitObject
+from gitObjects import *
 
 
 class GitBlob(GitObject):
