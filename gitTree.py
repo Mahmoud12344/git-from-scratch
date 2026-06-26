@@ -1,4 +1,4 @@
-import gitObjects
+from gitObjects import GitObject
 
 # Tree format :
 # [mode] space [path] 0x00 [sha-1]
@@ -57,3 +57,44 @@ class GitTreeLeaf(object):
         self.mode = mode
         self.path = path
         self.sha = sha
+
+
+def _tree_leaf_sort_key(leaf: GitTreeLeaf):
+    """this is a helper function used in the sorting
+    , only job is adding a '/' to end of the direct"""
+
+    if leaf.mode.startswith(b"4"):
+        return leaf.path + "/"
+
+    else:
+        return leaf.path
+
+
+def tree_serialize(obj: GitTree):
+    """build the tree format again which is
+    mode space path null sha
+    """
+    obj.items.sort(key=_tree_leaf_sort_key)
+    ret = b""
+    for i in obj.items:
+        ret += i.mode
+        ret += b" "
+        ret += i.path.encode("utf8")
+        ret += b"\x00"
+        sha = int(i.sha, 16)
+        ret += sha.to_bytes(20, byteorder="big")
+
+        return ret
+
+
+class GitTree(GitObject):
+    fmt = b"tree"
+
+    def deserialize(self, data):
+        self.items = tree_parse(data)
+
+    def serialize(self):
+        return tree_serialize(self)
+
+    def init(self):
+        self.items = list()
