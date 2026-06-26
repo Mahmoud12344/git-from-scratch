@@ -1,14 +1,13 @@
 # from  import *
-from cli import *
+# from cli import *
 from repository import *
+from gitBlob import GitBlob
+from gitCommit import GitCommit
 
-## this is the module used for parsing the input and makes the help/use menuses
-import argparse
 
 # this is used to read and write config files
-import configparser
 from datetime import datetime
-import grp, pwd, os, sys, re
+import os, sys
 
 # this is a standard library used to match filenames  will be used for gitignore
 from fnmatch import fnmatch
@@ -106,18 +105,6 @@ def object_write(obj, repo=None):
                 f.write(zlib.compress(result))
 
     return sha
-
-
-class GitBlob(GitObject):
-    """this function specifies how to serialize the blob obj"""
-
-    fmt = b"blob"
-
-    def serialize(self):
-        return self.blobdata
-
-    def deserialize(self, data):
-        self.blobdata = data
 
 
 ## TODO this function to be fully implemented later
