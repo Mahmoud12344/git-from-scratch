@@ -71,6 +71,21 @@ def cmd_init(args):
     repo_create(args.path)
 
 
+# wyag cat-file TYPE OBJECT
 def cmd_cat_file(args):
     repo = repo_find()
     cat_file(repo, args.obj, fmt=args.type.encode())
+
+
+# wyag hash-object [-w] [-t TYPE] FILE
+def cmd_hash_object(args):
+    """it reads a file, computes its hash as an object,
+    either storing it in the repository (if the -w flag is passed)
+    or just printing its hash."""
+    if args.write:
+        repo = repo_find()
+    else:
+        repo = None
+    with open(args.path, "rb") as fd:
+        sha = object_hash(fd, args.type.encode(), repo)
+        print(sha)

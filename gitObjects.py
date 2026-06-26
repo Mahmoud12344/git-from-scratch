@@ -125,47 +125,32 @@ def object_find(repo, name, fmt=None, follow=True):
     return name
 
 
+#   wyag cat-file TYPE OBJECT
+
+
 def cat_file(repo, obj, fmt=None):
+    """imply prints the raw contents of an object to stdout,
+    uncompressed and without the git header"""
+
     obj = object_read(
         repo,
         object_find(repo, obj, fmt=fmt),
     )
     sys.stdout.buffer.write(obj.serialize())
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+
+
+def object_hash(fd, fmt, repo=None):
+    data = fd.read()
+    match fmt:
+        case b"commit":
+            obj = GitCommit(data)
+        case b"tree":
+            obj = GitTree(data)
+        case b"blob":
+            obj = GitBlob(data)
+        case b"tag":
+            obj = gitTag(data)
+        case _:
+            raise Exception(f"Unknown Type {fmt}!")
+
+    return object_write(obj, repo=repo)
