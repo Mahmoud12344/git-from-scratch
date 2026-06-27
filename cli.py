@@ -81,6 +81,19 @@ def parse_args(argv):
         help="A tree-ish Object. ",
     )
 
+    # checkout parser
+    checkout_parser = argsubparsers.add_parser(
+        "checkout", help="checkout a commit inside a directory"
+    )
+    checkout_parser.add_argument(
+        "commit",
+        help="the commit or the tree to checkout",
+    )
+    checkout_parser.add_argument(
+        "path",
+        help="The EMPTY directory to checkon",
+    )
+
     return argparser.parse_args(argv)
 
 
@@ -129,6 +142,36 @@ def cmd_log(args):
 def cmd_ls_tree(args):
     repo = repo_find()
     ls_tree(repo, args.tree, args.recursive)
+
+
+def cmd_checkout(args):
+    """Execution steps
+    1- find the repo
+    2-read the object,
+    3.if the object is a commit we grab it's tree,
+    4-check for the path if it's exit and empty or does not exit and make it,
+    5- call the checkout func
+    """
+    # 1
+    repo = repo_find()
+    # 2
+    obj = object_read(repo, object_find(repo, args.commit))
+    # 3
+    if obj.fmt == b"commit":
+        obj = object_read(repo, obj.kvlm[b"tree"].decode("ascii"))
+    # 4
+    if os.path.exists(args.path):
+        if not os.path.isdir(args.path):
+            raise Exception(f"Not A Directory :--> {args.path}")
+        if os.listdir(args.path):
+            raise Exception(f"Not Empty :--> {args.path}!")
+    else:
+        os.makedirs(args.path)
+
+    tree_checkout(repo, obj, os.path.realpath(args.path))
+    
+    
+    
 
 
 # TODO understand in details how this function works and , know what is 'graphviz 'lib

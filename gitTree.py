@@ -128,6 +128,27 @@ def ls_tree(repo, ref, recursive=None, prefix=""):
             ls_tree(repo, item.sha, recursive, os.path.join(prefix, item.path))
 
 
+def tree_checkout(repo, tree, path):
+    """Execution  steps:
+    for each item in the tree
+    1-read the received object ,
+    2-identify the dest path which is the path + the object internal path,
+    3 - branch :
+        if the received object is a tree : recurse
+        elif write this fle
+
+    """
+    for item in tree.items:
+        obj = object_read(repo, item.sha)
+        dest = os.path.join(path, item.path)
+        if obj.fmt == b"tree":
+            os.mkdir(dest)
+            tree_checkout(repo, obj, dest)
+        elif obj.fmt == b"blob":
+            with open(dest, "wb") as fb:
+                fb.write(obj.blobdata)
+
+
 class GitTree(GitObject):
     fmt = b"tree"
 
