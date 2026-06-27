@@ -3,6 +3,7 @@ import argparse
 # from libwyag import *
 # from gitObjects import
 from gitTree import *
+from gitRef import *
 
 
 def parse_args(argv):
@@ -94,6 +95,12 @@ def parse_args(argv):
         help="The EMPTY directory to checkon",
     )
 
+    # show-ref parser
+    show_ref_parser = argsubparsers.add_parser(
+        "show-ref",
+        help="List references",
+    )
+
     return argparser.parse_args(argv)
 
 
@@ -169,9 +176,15 @@ def cmd_checkout(args):
         os.makedirs(args.path)
 
     tree_checkout(repo, obj, os.path.realpath(args.path))
+
+
+def cmd_show_ref(args):
+    repo = repo_find()
+    refs = ref_list(repo)
+    show_ref(repo, refs, prefix="refs")
     
     
-    
+
 
 
 # TODO understand in details how this function works and , know what is 'graphviz 'lib
