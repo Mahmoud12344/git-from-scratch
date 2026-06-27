@@ -88,6 +88,8 @@ def object_read(repo, sha):
 
                 c = GitTree
             case b"tag":
+                from gitTag import GitTag
+
                 c = GitTag
             case _:
                 raise Exception(f"Unknown type {fmt.decode('ascii')} for object {sha}")
@@ -150,6 +152,8 @@ def object_hash(fd, fmt, repo=None):
 
             obj = GitBlob(data)
         case b"tag":
+            from gitTag import GitTag
+
             obj = GitTag(data)
         case _:
             raise Exception(f"Unknown Type {fmt}!")
