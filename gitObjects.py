@@ -150,7 +150,7 @@ def object_hash(fd, fmt, repo=None):
 
             obj = GitBlob(data)
         case b"tag":
-            obj = gitTag(data)
+            obj = GitTag(data)
         case _:
             raise Exception(f"Unknown Type {fmt}!")
 
