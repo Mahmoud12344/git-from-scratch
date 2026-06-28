@@ -1,6 +1,7 @@
 # from  import *
 # from cli import *
 from repository import *
+from gitRef import ref_resolve
 
 # from gitBlob import GitBlob
 # import gitBlob
@@ -8,7 +9,7 @@ from repository import *
 
 # this is used to read and write config files
 from datetime import datetime
-import os, sys
+import os, sys, re
 
 # this is a standard library used to match filenames  will be used for gitignore
 from fnmatch import fnmatch
@@ -117,22 +118,107 @@ def object_write(obj, repo=None):
     return sha
 
 
-## TODO this function to be fully implemented later
+def object_resolve(repo, name):
+    """Resolve the name to an object hash in repo
+
+    This function is aware of :
+    - the HEAD literal
+        -short and long hashes
+        -tags,
+        branches,
+        remote branches,
+    Execution Steps:
+        1-creates a list of the candidates;
+        2-make the compiled regex obj to find the sha ,
+        3- check if the name is empty,
+        4-if the name is HEAD we resolve the reference directly
+        if it's a hex:
+        check
+            4.1- as ref,
+            4.2-as tag,
+            4.3- as branch
+            4.4-as remote_branch
+
+    """
+    # 1
+    cand = list()
+    # 2
+    hashRE = re.compile(r"^[0-9A-Fa-f]{4,40}$")
+    # 3
+    if not name.strip():
+        return None
+    # 4
+    if name == "HEAd":
+        return [ref_resolve(repo, "HEAD")]
+
+    if hashRE.match(name):
+        name = name.lower()
+        pref = name[0:2]
+        path = repo_dir(repo, "objects", pref, mkdir=False)
+        if path:
+            rem = name[2:]
+            for f in os.listdir(path):
+                if f.startswith(rem):
+                    cand.append(pref + f)
+    # 4.2
+    as_tag = ref_resolve(repo, "refs/tags" + name)
+    if as_tag:
+        cand.append(as_tag)
+    # 4.3
+    as_branch = ref_resolve(repo, "refs/heads/" + name)
+    if as_branch:
+        cand.append(as_branch)
+
+    # 4.4
+    as_remote_branch = ref_resolve(repo, "refs/remotes/" + name)
+    if as_remote_branch:  # Did we find a remote branch?
+        cand.append(as_remote_branch)
+
+    return cand
+
+
 def object_find(repo, name, fmt=None, follow=True):
-    return name
+    """Search for an object in the repo:
+    Execution steps :
+    1-If we have a tag and fmt is anything else, we follow the tag.
+    2-If we have a commit and fmt is tree, we return this commit's tree object
+    3-In all other situations, we bail out: nothing else makes sense.
+    """
 
+    # this is a list of references
+    sha = object_resolve(repo, name)
+    if not sha:
+        raise Exception(f"NO such a ref -> {name}")
+    if len(sha) > 1:
+        raise Exception(
+            f"Ambiguous reference {name}: Candidates are:\n - {'\n - '.join(sha)}."
+        )
 
-#   wyag cat-file TYPE OBJECT
+    sha = sha[0]
+    if not fmt:
+        return sha
+
+    while True:
+        obj = object_read()
+        if obj.fmt == fmt:
+            return sha
+        if not follow:
+            return None
+        if obj.fmt == b"tag":
+            sha = obj.klvm[b"object"].decode("ascii")
+        elif obj.fmt == b"commit" and fmt == b"tree":
+            sha = obj.klvm[b"tree"].decode("ascii")
+        else:
+            return None
+
+    #   wyag cat-file TYPE OBJECT
 
 
 def cat_file(repo, obj, fmt=None):
     """imply prints the raw contents of an object to stdout,
     uncompressed and without the git header"""
 
-    obj = object_read(
-        repo,
-        object_find(repo, obj, fmt=fmt),
-    )
+    obj = object_read(repo, object_find(repo, obj, fmt=fmt))
     sys.stdout.buffer.write(obj.serialize())
 
 

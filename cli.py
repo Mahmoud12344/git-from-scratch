@@ -138,7 +138,7 @@ def cmd_init(args):
 # wyag cat-file TYPE OBJECT
 def cmd_cat_file(args):
     repo = repo_find()
-    cat_file(repo, args.obj, fmt=args.type.encode())
+    cat_file(repo, args.object, fmt=args.type.encode())
 
 
 # wyag hash-object [-w] [-t TYPE] FILE
