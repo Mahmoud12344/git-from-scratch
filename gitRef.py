@@ -53,3 +53,9 @@ def show_ref(repo, refs, with_hash=True, prefix=""):
             print(f"{prefix}{k}")
         else:
             show_ref(repo, v, with_hash=with_hash, prefix=f"{prefix}{k}")
+
+
+def ref_create(repo, ref_name, sha):
+    """create the ref file in path refs/ and saves the sha to it"""
+    with open(repo_file(repo, "refs/" + ref_name), "w") as f:
+        f.write(sha + "\n")

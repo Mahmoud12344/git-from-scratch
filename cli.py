@@ -100,6 +100,24 @@ def parse_args(argv):
         "show-ref",
         help="List references",
     )
+    # tag parser
+    tag_parser = argsubparsers.add_parser(
+        "tag",
+        help="List and create tags",
+    )
+    tag_parser.add_argument(
+        "-a",
+        action="store_true",
+        dest="create_tag_object",
+        help="whether to create tag",
+    )
+    tag_parser.add_argument(
+        "object",
+        default="HEAD",
+        nargs="?",
+        help="The object the new tag will point to",
+    )
+    tag_parser.add_argument("name", nargs="?", help="new tag's name")
 
     return argparser.parse_args(argv)
 
@@ -182,9 +200,21 @@ def cmd_show_ref(args):
     repo = repo_find()
     refs = ref_list(repo)
     show_ref(repo, refs, prefix="refs")
-    
-    
 
+
+def cmd_tag(args):
+    repo = repo_find()
+
+    if args.name:
+        tag_create(
+            repo,
+            args.name,
+            args.object,
+            create_tag_object=args.create_tag_object,
+        )
+    else:
+        refs = (ref_list(repo),)
+        show_ref(repo, refs["tags"], with_hash=False)
 
 
 # TODO understand in details how this function works and , know what is 'graphviz 'lib
