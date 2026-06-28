@@ -55,12 +55,11 @@ def object_read(repo, sha):
     6-pick the constructor
     7- return"""
 
-    path = repo_file(repo, "object", sha[:2], sha[2:])
-
+    path = repo_file(repo, "objects", sha[:2], sha[2:])
     if not os.path.isfile(path):
         return None
 
-    with open(path, "fb") as f:
+    with open(path, "rb") as f:
         raw = zlib.decompress(f.read())
         ## the obj type plop commit ,,,
         x = raw.find(b" ")
@@ -199,7 +198,7 @@ def object_find(repo, name, fmt=None, follow=True):
         return sha
 
     while True:
-        obj = object_read()
+        obj = object_read(repo, sha)
         if obj.fmt == fmt:
             return sha
         if not follow:
@@ -219,6 +218,8 @@ def cat_file(repo, obj, fmt=None):
     uncompressed and without the git header"""
 
     obj = object_read(repo, object_find(repo, obj, fmt=fmt))
+    print(f"in cat_file the obj is --> {obj}")
+
     sys.stdout.buffer.write(obj.serialize())
 
 

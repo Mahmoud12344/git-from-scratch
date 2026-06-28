@@ -138,6 +138,8 @@ def cmd_init(args):
 # wyag cat-file TYPE OBJECT
 def cmd_cat_file(args):
     repo = repo_find()
+    print(f'in cmd_cat_file,the repo is --> {repo}')
+    
     cat_file(repo, args.object, fmt=args.type.encode())
 
 
