@@ -109,7 +109,7 @@ def parse_args(argv):
     tag_parser.add_argument(
         "-a",
         action="store_true",
-        dest="create_tag_object",
+        dest="create_object",
         help="whether to create tag",
     )
     tag_parser.add_argument(
@@ -118,7 +118,29 @@ def parse_args(argv):
         nargs="?",
         help="The object the new tag will point to",
     )
-    tag_parser.add_argument("name", nargs="?", help="new tag's name")
+    tag_parser.add_argument(
+        "name",
+        nargs="?",
+        help="new tag's name",
+    )
+
+    # rev-parse parser
+    rev_parse_parser = argsubparsers.add_parser(
+        "rev-parse",
+        help="Parse revision or other objects identifiers",
+    )
+    rev_parse_parser.add_argument(
+        "--wyag-type",
+        metavar="type",
+        dest="type",
+        choices=["blob", "commit", "tag", "tree"],
+        default=None,
+        help="Specify the expected type",
+    )
+    rev_parse_parser.add_argument(
+        "name",
+        help="The name to parse",
+    )
 
     return argparser.parse_args(argv)
 
@@ -139,8 +161,7 @@ def cmd_init(args):
 # wyag cat-file TYPE OBJECT
 def cmd_cat_file(args):
     repo = repo_find()
-    
-    
+
     cat_file(repo, args.object, fmt=args.type.encode())
 
 
@@ -213,14 +234,23 @@ def cmd_tag(args):
             repo,
             args.name,
             args.object,
-            create_tag_object=args.create_tag_object,
+            create_object=args.create_object,
         )
     else:
         refs = (ref_list(repo),)
         show_ref(repo, refs["tags"], with_hash=False)
 
 
-# TODO understand in details how this function works and , know what is 'graphviz 'lib
+def cmd_rev_parse(args):
+    if args.type:
+        fmt = args.type.encode()
+    else:
+        fmt = None
+
+    repo = repo_find()
+    print(object_find(repo, args.name, fmt, follow=True))
+
+
 def log_graphviz(repo, sha, seen):
 
     if sha in seen:
@@ -228,6 +258,8 @@ def log_graphviz(repo, sha, seen):
     seen.add(sha)
 
     commit = object_read(repo, sha)
+    assert commit.fmt == b"commit"
+
     message = commit.kvlm[None].decode("utf8").strip()
     message = message.replace("\\", "\\\\")
     message = message.replace('"', '\\"')
@@ -236,15 +268,14 @@ def log_graphviz(repo, sha, seen):
         message = message[: message.index("\n")]
 
     print(f'  c_{sha} [label="{sha[0:7]}: {message}"]')
-    assert commit.fmt == b"commit"
 
-    if not b"parent" in commit.kvlm.keys():
+    if b"parent" not in commit.kvlm:
         # Base case: the initial commit.
         return
 
     parents = commit.kvlm[b"parent"]
 
-    if type(parents) != list:
+    if not isinstance(parents, list):
         parents = [parents]
 
     for p in parents:
