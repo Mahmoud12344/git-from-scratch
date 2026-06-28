@@ -4,10 +4,10 @@ from gitObjects import GitObject
 class GitCommit(GitObject):
     fmt = "commit"
 
-    def serialize(self, data):
+    def deserialize(self, data):
         self.kvlm = kvlm_parse(data)
 
-    def deserialize(self):
+    def serialize(self):
         return kvlm_serialize(self.kvlm)
 
     def init(self):
