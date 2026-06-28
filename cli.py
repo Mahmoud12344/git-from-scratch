@@ -4,6 +4,7 @@ import argparse
 # from gitObjects import
 from gitTree import *
 from gitRef import *
+from gitTag import *
 
 
 def parse_args(argv):
