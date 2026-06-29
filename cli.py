@@ -156,6 +156,16 @@ def parse_args(argv):
         action="store_true",
         help="show everything ",
     )
+    # check-ignore parser
+    check_ignore = argsubparsers.add_parser(
+        "check-ignore",
+        help="check ignored files against ignore rules ,",
+    )
+    check_ignore.add_argument(
+        "path",
+        nargs="+",
+        help="paths to check",
+    )
 
     return argparser.parse_args(argv)
 
@@ -296,6 +306,14 @@ def cmd_ls_files(args):
                 # These modules are not available on Windows, so just use the less-nice info.
                 print(f"  user: {e.uid}  group: {e.gid}")
             print(f"  flags: stage={e.flag_stage} assume_valid={e.flag_assume_valid}")
+
+
+def cmd_check_ignore(args):
+    repo = repo_find()
+    rules = gitignore_read(repo)
+    for path in args.path:
+        if check_ignore(rules, path):
+            print("-->", path)
 
 
 def log_graphviz(repo, sha, seen):
