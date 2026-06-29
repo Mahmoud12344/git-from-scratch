@@ -1,7 +1,10 @@
 import argparse
+import grp
+import pwd
 
 # from libwyag import *
 # from gitObjects import
+from gitIndex import index_read
 from gitTree import *
 from gitRef import *
 from gitTag import *
@@ -142,6 +145,18 @@ def parse_args(argv):
         help="The name to parse",
     )
 
+    # ls-files parser
+    ls_files_parser = argsubparsers.add_parser(
+        "ls-files",
+        help="list all the staged files",
+    )
+
+    ls_files_parser.add_argument(
+        "--verbose",
+        action="store_true",
+        help="show everything ",
+    )
+
     return argparser.parse_args(argv)
 
 
@@ -249,6 +264,38 @@ def cmd_rev_parse(args):
 
     repo = repo_find()
     print(object_find(repo, args.name, fmt, follow=True))
+
+
+def cmd_ls_files(args):
+    repo = repo_find()
+    index = index_read(repo)
+    if args.verbose:
+        print(
+            f"Index file format v{index.version}, containing {len(index.entries)} entries."
+        )
+
+    for e in index.entries:
+        print(e.name)
+        if args.verbose:
+            entry_type = {
+                0b1000: "regular file",
+                0b1010: "symlink",
+                0b1110: "git link",
+            }[e.mode_type]
+            print(f"  {entry_type} with perms: {e.mode_perms:o}")
+            print(f"  on blob: {e.sha}")
+            print(
+                f"  created: {datetime.fromtimestamp(e.ctime[0])}.{e.ctime[1]}, modified: {datetime.fromtimestamp(e.mtime[0])}.{e.mtime[1]}"
+            )
+            print(f"  device: {e.dev}, inode: {e.ino}")
+            try:
+                print(
+                    f"  user: {pwd.getpwuid(e.uid).pw_name} ({e.uid})  group: {grp.getgrgid(e.gid).gr_name} ({e.gid})"
+                )
+            except NameError:
+                # These modules are not available on Windows, so just use the less-nice info.
+                print(f"  user: {e.uid}  group: {e.gid}")
+            print(f"  flags: stage={e.flag_stage} assume_valid={e.flag_assume_valid}")
 
 
 def log_graphviz(repo, sha, seen):
