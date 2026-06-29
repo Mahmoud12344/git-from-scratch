@@ -13,6 +13,60 @@ class GitIgnore(object):
         self.scoped = scoped
 
 
+def check_ignore1(rules, path):
+    """matches the paths against set of rules and
+    return True False or None if Nothing matches"""
+    res = None
+    for pattern, val in rules:
+        res = val
+
+    return val
+
+
+def check_ignore_scoped(rules, path):
+    """match against the dictionary of scoped rules
+    (the various .gitignore files). It just starts
+    at the path’s directory then moves up to the parent
+    directory, recursively, until it has tested root."""
+
+    parent = os.path.dirname(path)
+
+    while True:
+        if parent in rules:
+            res = check_ignore1(rules[parent], path)
+            if res != None:
+                return res
+        if parent == "":
+            break
+        parent = os.path.dirname(parent)
+
+    return None
+
+
+def check_ignore_absolute(rules, path):
+    """match against the absolute path"""
+    parent = os.path.dirname(path)
+    for ruleset in rules:
+        result = check_ignore1(ruleset, path)
+        if result != None:
+            return result
+    return False
+
+
+def check_ignore(rules, path):
+    """the main function to check against the paths"""
+    if os.path.isabs(path):
+        raise Exception(
+            "This function requires path to be relative to the repository's root"
+        )
+
+    result = check_ignore_scoped(rules.scoped, path)
+    if result != None:
+        return result
+
+    return check_ignore_absolute(rules.absolute, path)
+
+
 def gitignore_read(repo):
     """Reads all the .gitignore anywhere on the system ,global and local,scoped ;
     Execution Steps :
@@ -36,7 +90,7 @@ def gitignore_read(repo):
     global_file = os.path.join(config_home, "git/ignore")
     if os.path.exists(global_file):
         with open(global_file, "r") as f:
-            gi.absolute.append(gitignore_parse(f.readlines))
+            gi.absolute.append(gitignore_parse(f.readlines()))
     # index
     index = index_read(repo)
     for ent in index.entries:
@@ -44,7 +98,7 @@ def gitignore_read(repo):
             dir_name = os.path.dirname(ent.name)
             contents = object_read(repo, ent.sha)
             lines = contents.blobdata.decode("utf8").splitlines()
-            gi.scoped[dir_name] = gitignore_parse(lines) # type: ignore
+            gi.scoped[dir_name] = gitignore_parse(lines)  # type: ignore
     return gi
 
 
@@ -71,6 +125,7 @@ def gitignore_parse1(raw):
 def gitignore_parse(lines) -> list[str]:
     """gitignore parse used to scan the files for the patters and return a list of them"""
     res = list()
+
     for line in lines:
         parsed = gitignore_parse1(line)
         if parsed:

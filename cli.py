@@ -8,6 +8,7 @@ from gitIndex import index_read
 from gitTree import *
 from gitRef import *
 from gitTag import *
+from gitignore import check_ignore, gitignore_read
 
 
 def parse_args(argv):
