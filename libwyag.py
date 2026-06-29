@@ -45,8 +45,8 @@ def main(argv=sys.argv[1:]):
         # case 'add': cmd_add(args)
         case "cat-file":
             cmd_cat_file(args)
-        case "check-gitignore":
-            cmd_check_gitignore(args)
+        case "check-ignore":
+            cmd_check_ignore(args)
         case "checkout":
             cmd_checkout(args)
         case "commit":
