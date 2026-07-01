@@ -149,6 +149,22 @@ def tree_checkout(repo, tree, path):
                 fb.write(obj.blobdata)
 
 
+def tree_to_dict(repo, ref, prefix="")->dict:
+    """A recursive function to convert a full
+    tree into a dic with full paths,"""
+    ret = dict()
+    tree_sha = object_find(repo, ref, fmt="tree")
+    tree = object_read(repo, tree_sha)
+    for leaf in tree.items:
+        full_path=os.path.join(prefix,leaf.path)
+        is_subtree=leaf.mode.startswith(b'04')
+        
+        if is_subtree:
+            ret.update(tree_to_dict(repo,leaf.sha,full_path))
+        else:
+            ret[full_path]=leaf.sha
+            
+    return ret
 class GitTree(GitObject):
     fmt = b"tree"
 
@@ -160,3 +176,13 @@ class GitTree(GitObject):
 
     def init(self):
         self.items = list()
+
+
+def branch_git_active(repo):
+
+    with open(repo_file(repo, "HEAD"), "r") as f:
+        head = f.read()
+        if head.startswith("ref: refs/heads/"):
+            return head[16:-1]
+        else:
+            return False

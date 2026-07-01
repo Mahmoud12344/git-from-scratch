@@ -20,7 +20,7 @@ def check_ignore1(rules, path):
     for pattern, val in rules:
         import fnmatch
 
-        if fnmatch(path, pattern):
+        if fnmatch.fnmatch(path, pattern):
             res = val
 
     return res

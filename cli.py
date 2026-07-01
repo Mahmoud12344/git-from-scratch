@@ -167,7 +167,11 @@ def parse_args(argv):
         nargs="+",
         help="paths to check",
     )
-
+    # status parser
+    status = argsubparsers.add_parser(
+        "status",
+        help="show the working tree status ",
+    )
     return argparser.parse_args(argv)
 
 
@@ -315,6 +319,98 @@ def cmd_check_ignore(args):
     for path in args.path:
         if check_ignore(rules, path):
             print("-->", path)
+
+
+def cmd_status(_):
+    repo = repo_find()
+    index = index_read(repo)
+    cmd_status_branch(repo)
+    cmd_status_head_index(repo, index)
+    print()
+    cmd_status_index_worktree(repo, index)
+
+
+def cmd_status_branch(repo):
+    branch = branch_git_active(repo)
+    if branch:
+        print(f"on branch {branch}.")
+    else:
+        print(f"HEAD detached at {object_find(repo,'HEAD')}.")
+
+
+def cmd_status_head_index(repo, index):
+    print("Changes To Be Committed: ")
+
+    try:
+        head = tree_to_dict(repo, "HEAD")
+    except Exception:
+
+        print("No commits yet\n")
+        for entry in index.entries:
+            print(f"  added: {entry.name}")
+        return
+    for entry in index.entries:
+        if entry.name in head:
+            if head[entry.name] != entry.sha:
+                del head[entry.name]
+        else:
+            print("     added:-->", entry.name)
+
+    for entry in head.keys():
+        print("     deleted:-->", entry)
+
+
+def cmd_status_index_worktree(repo, index):
+    """show the diff between the index and work tree"""
+    print("Changes not staged for commit:")
+    ignore = gitignore_read(repo)
+
+    gitdire_prefix = repo.gitdire + os.path.sep
+
+    all_files = list()
+    #
+    # #-this makes a list of all the files and the dirs in the working tree
+    for root, _, files in os.walk(repo.worktree, True):
+        if root == repo.gitdire or root.startswith(gitdire_prefix):
+            continue
+        for f in files:
+            full_path = os.path.join(root, f)
+            rel_path = os.path.relpath(full_path, repo.worktree)
+            all_files.append(rel_path)
+    # this checks for the deleted files by
+    # comparing the working tree vs the index
+    # if the file or dir is in the index and not in  wt then it's deleted
+    for ent in index.entries:
+        full_path = os.path.join(repo.worktree, ent.name)
+        if not os.path.exists(ent.name):
+            print("deleted :--> ", ent.name)
+        else:
+
+            ## this checks for the modified files if the entry in the index is different
+            # in the wt then we than make a compare wt new hash vs index hash
+            stat = os.stat(full_path)
+            ctime_ns = ent.ctime[0] * 10**9 + ent.ctime[1]
+            mtime_ns = ent.mtime[0] * 10**9 + ent.mtime[1]
+            if (stat.st_ctime_ns != ctime_ns) or (stat.st_mtime_ns != mtime_ns):
+                # If different, deep compare.
+                # @FIXME This *will* crash on symlinks to dir.
+                with open(full_path, "rb") as fd:
+                    new_sha = object_hash(fd, b"blob", None)
+                    # If the hashes are the same, the files are actually the same.
+                    same = ent.sha == new_sha
+                if not same:
+                    print(f"modified:-->", ent.name)
+        if ent.name in all_files:
+            all_files.remove(ent.name)
+
+    print()
+    print("Untracked files:")
+
+    for f in all_files:
+        # @TODO If a full directory is untracked, we should display
+        # its name without its contents.
+        if not check_ignore(ignore, f):
+            print("-->", f)
 
 
 def log_graphviz(repo, sha, seen):
