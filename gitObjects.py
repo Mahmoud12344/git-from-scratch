@@ -1,6 +1,6 @@
 # from  import *
 # from cli import *
-from repository import *
+from gitrepo import *
 from gitRef import ref_resolve
 
 # from gitBlob import GitBlob
@@ -147,7 +147,7 @@ def object_resolve(repo, name):
     if not name.strip():
         return None
     # 4
-    if name == "HEAd":
+    if name == "HEAD":
         return [ref_resolve(repo, "HEAD")]
 
     if hashRE.match(name):
@@ -160,7 +160,7 @@ def object_resolve(repo, name):
                 if f.startswith(rem):
                     cand.append(pref + f)
     # 4.2
-    as_tag = ref_resolve(repo, "refs/tags" + name)
+    as_tag = ref_resolve(repo, "refs/tags/" + name)
     if as_tag:
         cand.append(as_tag)
     # 4.3
@@ -184,6 +184,9 @@ def object_find(repo, name, fmt=None, follow=True):
     3-In all other situations, we bail out: nothing else makes sense.
     """
 
+    if isinstance(fmt, str):
+        fmt = fmt.encode()
+
     # this is a list of references
     sha = object_resolve(repo, name)
     if not sha:
@@ -204,9 +207,9 @@ def object_find(repo, name, fmt=None, follow=True):
         if not follow:
             return None
         if obj.fmt == b"tag":
-            sha = obj.klvm[b"object"].decode("ascii")
+            sha = obj.kvlm[b"object"].decode("ascii")
         elif obj.fmt == b"commit" and fmt == b"tree":
-            sha = obj.klvm[b"tree"].decode("ascii")
+            sha = obj.kvlm[b"tree"].decode("ascii")
         else:
             return None
 

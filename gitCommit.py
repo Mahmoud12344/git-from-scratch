@@ -1,8 +1,8 @@
-from gitObjects import GitObject
+from gitObjects import GitObject, object_write
 
 
 class GitCommit(GitObject):
-    fmt = "commit"
+    fmt = b"commit"
 
     def deserialize(self, data):
         self.kvlm = kvlm_parse(data)
@@ -44,7 +44,7 @@ def kvlm_parse(raw, start=0, dct=None):
     if (spc < 0) or (nl < spc):
         assert nl == start
         # 4
-        dct[None] = raw[start + 1]
+        dct[None] = raw[start + 1 :]
         return dct
     # 5
     key = raw[start:spc]
@@ -89,3 +89,30 @@ def kvlm_serialize(kvlm):
     ret += b"\n" + kvlm[None]
 
     return ret
+
+
+def commit_create(repo, tree, parent, author, timestamp, message):
+  ##  for the timestamp argument, you must provide a datetime object.
+    commit = GitCommit()  # Create the new commit object.
+    commit.kvlm[b"tree"] = tree.encode("ascii")
+    if parent:
+        commit.kvlm[b"parent"] = parent.encode("ascii")
+
+    # Trim message and add a trailing \n
+    message = message.strip() + "\n"
+    # Format timezone
+    offset = int(timestamp.astimezone().utcoffset().total_seconds())
+    hours = offset // 3600
+    minutes = (offset % 3600) // 60
+    tz = "{}{:02}{:02}".format("+" if offset > 0 else "-", hours, minutes)
+
+    if not author:
+        author = "wyag <wyag@example.com>"
+
+    author = author + " " + str(int(timestamp.timestamp())) + " " + tz
+
+    commit.kvlm[b"author"] = author.encode("utf8")
+    commit.kvlm[b"committer"] = author.encode("utf8")
+    commit.kvlm[None] = message.encode("utf8")
+
+    return object_write(commit, repo)

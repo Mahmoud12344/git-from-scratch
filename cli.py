@@ -4,6 +4,8 @@ import pwd
 
 # from libwyag import *
 # from gitObjects import
+from gitBlob import add, rm
+from gitCommit import commit_create
 from gitIndex import index_read
 from gitTree import *
 from gitRef import *
@@ -172,6 +174,37 @@ def parse_args(argv):
         "status",
         help="show the working tree status ",
     )
+
+    # rm parser
+    rm_parser = argsubparsers.add_parser(
+        "rm",
+        help="Removes files from the working tree and the index",
+    )
+    rm_parser.add_argument(
+        "path",
+        nargs="+",
+        help="files to remove",
+    )
+
+    # add parser
+    add_parser = argsubparsers.add_parser(
+        "add", help="Add fils ot the index aka.. tracking "
+    )
+    add_parser.add_argument(
+        "path",
+        nargs="+",
+        help="files to add",
+    )
+
+    argsp = argsubparsers.add_parser("commit", help="Record changes to the repository.")
+
+    argsp.add_argument(
+        "-m",
+        metavar="message",
+        dest="message",
+        help="Message to associate with this commit.",
+    )
+
     return argparser.parse_args(argv)
 
 
@@ -352,7 +385,8 @@ def cmd_status_head_index(repo, index):
     for entry in index.entries:
         if entry.name in head:
             if head[entry.name] != entry.sha:
-                del head[entry.name]
+                print("     modified:-->", entry.name)
+            del head[entry.name]
         else:
             print("     added:-->", entry.name)
 
@@ -382,7 +416,7 @@ def cmd_status_index_worktree(repo, index):
     # if the file or dir is in the index and not in  wt then it's deleted
     for ent in index.entries:
         full_path = os.path.join(repo.worktree, ent.name)
-        if not os.path.exists(ent.name):
+        if not os.path.exists(full_path):
             print("deleted :--> ", ent.name)
         else:
 
@@ -411,6 +445,49 @@ def cmd_status_index_worktree(repo, index):
         # its name without its contents.
         if not check_ignore(ignore, f):
             print("-->", f)
+
+
+def cmd_rm(args):
+    repo = repo_find()
+    rm(repo, args.path)
+
+
+def cmd_add(args):
+    repo = repo_find()
+    add(repo, args.path)
+
+
+def cmd_commit(args):
+
+    repo = repo_find()
+    index = index_read(repo)
+    # Create trees, grab back SHA for the root tree.
+    tree = tree_from_index(repo, index)
+    try:
+        parent = object_find(repo, "HEAD")
+    except Exception:
+        parent = None
+
+    # Create the commit object itself
+    commit = commit_create(
+        repo,
+        tree,
+        parent,
+        gitconfig_user_get(gitconfig_read()),
+        datetime.now(),
+        args.message,
+    )
+
+    # Update HEAD so our commit is now the tip of the active branch.
+    active_branch = branch_git_active(repo)
+    if active_branch:  # If we're on a branch, we update refs/heads/BRANCH
+        with open(
+            repo_file(repo, os.path.join("refs/heads", active_branch)), "w"  # type: ignore
+        ) as fd:  # type: ignore
+            fd.write(commit + "\n")
+    else:  # Otherwise, we update HEAD itself.
+        with open(repo_file(repo, "HEAD"), "w") as fd:  # type: ignore
+            fd.write("\n")
 
 
 def log_graphviz(repo, sha, seen):

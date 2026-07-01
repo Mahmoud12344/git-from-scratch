@@ -1,5 +1,5 @@
 from gitObjects import *
-from repository import *
+from gitrepo import *
 
 
 def ref_resolve(repo, ref):
@@ -16,7 +16,7 @@ def ref_resolve(repo, ref):
         if data.startswith("ref: "):
             return ref_resolve(repo, data[5:])
         else:
-            data
+            return data
 
 
 def ref_list(repo, path=None):
