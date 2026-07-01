@@ -18,9 +18,12 @@ def check_ignore1(rules, path):
     return True False or None if Nothing matches"""
     res = None
     for pattern, val in rules:
-        res = val
+        import fnmatch
 
-    return val
+        if fnmatch(path, pattern):
+            res = val
+
+    return res
 
 
 def check_ignore_scoped(rules, path):
